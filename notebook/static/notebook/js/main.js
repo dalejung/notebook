@@ -43,7 +43,8 @@ require([
     'codemirror/lib/codemirror',
     'notebook/js/about',
     'notebook/js/searchandreplace',
-    'notebook/js/clipboard'
+    'notebook/js/clipboard',
+    'notebook/js/export',
 ], function(
     IPython,
     $,
