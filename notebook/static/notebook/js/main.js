@@ -80,7 +80,6 @@ require([
       // Setup all of the config related things
       
 
-      console.log(page);
       var common_options = {
           ws_url : utils.get_body_data("wsUrl"),
           base_url : utils.get_body_data("baseUrl"),
@@ -218,13 +217,12 @@ require([
                   console.warn('Widgets are not available.  Please install widgetsnbextension or ipywidgets 4.0');
               });
           }
+          notebook.load_notebook(common_options.notebook_path);
       })
       .catch(function(error) {
           console.error('Could not load ipywidgets', error);
       });
       // END HARDCODED WIDGETS HACK
-
-      notebook.load_notebook(common_options.notebook_path);
     }
     
     try{
