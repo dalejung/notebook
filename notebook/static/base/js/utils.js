@@ -46,7 +46,7 @@ define([
                     resolve(module);
                 }
             }, function(err) {
-                reject(err);
+                resolve(err);
             });
         });
     };
@@ -58,8 +58,13 @@ define([
      */
     var load_extensions = function () {
         console.log('load_extensions', arguments);
-        return Promise.all(Array.prototype.map.call(arguments, load_extension)).catch(function(err) {
-            console.error("Failed to load extension" + (err.requireModules.length>1?'s':'') + ":", err.requireModules, err);
+        return Promise.all(Array.prototype.map.call(arguments, load_extension)).then(function(values) {
+          for (var i=0; i < values.length; i++) {
+            var err = values[i];
+            if (values[i] instanceof Error) {
+              console.error("Failed to load extension" + (err.requireModules.length>1?'s':'') + ":", err.requireModules, err);
+            }
+          }
         });
     };
 
