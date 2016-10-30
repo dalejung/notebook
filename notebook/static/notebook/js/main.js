@@ -219,13 +219,12 @@ require([
                 console.warn('Widgets are not available.  Please install widgetsnbextension or ipywidgets 4.0');
             });
         }
+        notebook.load_notebook(common_options.notebook_path);
     })
     .catch(function(error) {
         console.error('Could not load ipywidgets', error);
     });
     // END HARDCODED WIDGETS HACK
-
-    notebook.load_notebook(common_options.notebook_path);
     } // setup_notebook()
     
     try{
