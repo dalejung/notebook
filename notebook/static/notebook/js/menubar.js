@@ -2,13 +2,14 @@
 // Distributed under the terms of the Modified BSD License.
 
 define([
+    'jquery',
     'base/js/namespace',
     'base/js/dialog',
     'base/js/utils',
     './celltoolbar',
     './tour',
     'moment',
-], function(IPython, dialog, utils, celltoolbar, tour, moment) {
+], function($, IPython, dialog, utils, celltoolbar, tour, moment) {
     "use strict";
     
     var MenuBar = function (selector, options) {
@@ -203,6 +204,10 @@ define([
         this.element.find('#download_pdf').click(function () {
             that._nbconvert('pdf', true);
         });
+        
+        this.element.find('#download_latex').click(function () {
+            that._nbconvert('latex', true);
+        });
 
         this.element.find('#download_script').click(function () {
             that._nbconvert('script', true);
@@ -249,6 +254,7 @@ define([
             '#rename_notebook' : 'rename-notebook',
             '#find_and_replace' : 'find-and-replace',
             '#save_checkpoint': 'save-notebook',
+            '#shutdown_kernel': 'confirm-shutdown-kernel',
             '#restart_kernel': 'confirm-restart-kernel',
             '#restart_clear_output': 'confirm-restart-kernel-and-clear-output',
             '#restart_run_all': 'confirm-restart-kernel-and-run-all-cells',
@@ -286,6 +292,7 @@ define([
             '#copy_cell_attachments': 'copy-cell-attachments',
             '#paste_cell_attachments': 'paste-cell-attachments',
             '#insert_image': 'insert-image',
+            '#edit_keyboard_shortcuts' : 'edit-command-mode-keyboard-shortcuts',
         };
 
         for(var idx in id_actions_dict){

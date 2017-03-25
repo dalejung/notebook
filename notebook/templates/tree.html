@@ -8,6 +8,7 @@
 data-base-url="{{base_url | urlencode}}"
 data-notebook-path="{{notebook_path | urlencode}}"
 data-terminals-available="{{terminals_available}}"
+data-server-root="{{server_root}}"
 {% endblock %}
 
 
@@ -33,6 +34,8 @@ data-terminals-available="{{terminals_available}}"
                   <button title="Move selected" class="move-button btn btn-default btn-xs">Move</button>
                   <button title="Download selected" class="download-button btn btn-default btn-xs">Download</button>
                   <button title="Shutdown selected notebook(s)" class="shutdown-button btn btn-default btn-xs btn-warning">Shutdown</button>
+                  <button title="View selected" class="view-button btn btn-default btn-xs">View</button>
+                  <button title="Edit selected" class="edit-button btn btn-default btn-xs">Edit</button>
                   <button title="Delete selected" class="delete-button btn btn-default btn-xs btn-danger"><i class="fa fa-trash"></i></button>
               </div>
             </div>
@@ -52,6 +55,9 @@ data-terminals-available="{{terminals_available}}"
                   <span class="caret"></span>
                   </button>
                   <ul id="new-menu" class="dropdown-menu">
+                    <li role="presentation" class="dropdown-header" id="notebook-kernels">Notebook:</li>
+                    <li role="presentation" class="divider"></li>
+                    <li role="presentation" class="dropdown-header" >Other:</li>
                     <li role="presentation" id="new-file">
                       <a role="menuitem" tabindex="-1" href="#">Text File</a>
                     </li>
@@ -67,8 +73,6 @@ data-terminals-available="{{terminals_available}}"
                       <a role="menuitem" tabindex="-1" href="#">Terminals Unavailable</a>
                     </li>
                     {% endif %}
-                    <li role="presentation" class="divider"></li>
-                    <li role="presentation" class="dropdown-header" id="notebook-kernels">Notebook:</li>
                   </ul>
                 </div>
                 <div class="btn-group">
@@ -181,5 +185,5 @@ data-terminals-available="{{terminals_available}}"
     {{super()}}
 
 
-<script src="{{ static_url("tree/js/built/main.min.js") }}" type="text/javascript" charset="utf-8"></script>
+<script src="{{ static_url("tree/js/main.min.js") }}" type="text/javascript" charset="utf-8"></script>
 {% endblock %}

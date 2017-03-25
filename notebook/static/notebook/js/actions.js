@@ -34,6 +34,7 @@ define(function(require){
         Object.seal(this);
     };
 
+    var $ = require('jquery');
     var events =  require('base/js/events');
 
     /**
@@ -62,10 +63,30 @@ define(function(require){
      *
      **/
     var _actions = {
+        'toggle-rtl-layout': {
+            help: 'Open a dialog to edit the command mode keyboard shortcuts',
+            handler: function () {
+              (document.body.getAttribute('dir')=='rtl') ? document.body.setAttribute('dir','ltr') : document.body.setAttribute('dir','rtl');
+            }
+        },
         'edit-command-mode-keyboard-shortcuts': {
             help: 'Open a dialog to edit the command mode keyboard shortcuts',
             handler: function (env) {
                 env.notebook.show_shortcuts_editor();
+            }
+        },
+        'shutdown-kernel': {
+            help: 'Shutdown the kernel (no confirmation dialog)',
+            handler: function (env) {
+                env.notebook.shutdown_kernel({confirm: false});
+            }
+        },
+        'confirm-shutdown-kernel':{
+            icon: 'fa-repeat',
+            help_index : 'hb',
+            help: 'Shutdown the kernel (with confirmation dialog)',
+            handler : function (env) {
+                env.notebook.shutdown_kernel();
             }
         },
         'restart-kernel': {

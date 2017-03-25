@@ -2,8 +2,9 @@
 // Distributed under the terms of the Modified BSD License.
 
 define([
+    'jquery',
     'base/js/utils',
-], function(utils) {
+], function($, utils) {
     "use strict";
 
     // tooltip constructor
@@ -273,6 +274,7 @@ define([
         // do some math to have the tooltip arrow on more or less on left or right
         // position of the editor
         var cm_pos = $(this.code_mirror.getWrapperElement()).position();
+        var cell_pos = $(this.code_mirror.getWrapperElement().offsetParent).position();
 
         // anchor and head positions are local within CodeMirror element
         var anchor = this.code_mirror.cursorCoords(false, 'local');
@@ -285,8 +287,8 @@ define([
         var arrow_left = center_left - edge_left - 24;
         
         // locate left, top within container element
-        var left = (cm_pos.left + edge_left) + 'px';
-        var top = (cm_pos.top + head.bottom + 10) + 'px';
+        var left = (cell_pos.left + cm_pos.left + edge_left) + 'px';
+        var top = (cell_pos.top + cm_pos.top + head.bottom + 10) + 'px';
 
         if (this._hidden === false) {
             this.tooltip.animate({

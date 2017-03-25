@@ -50,6 +50,8 @@ class ContentsManager(LoggingConfigurable):
       indicating the root path.
 
     """
+    
+    root_dir = Unicode('/', config=True)
 
     notary = Instance(sign.NotebookNotary)
     def _notary_default(self):
@@ -74,7 +76,7 @@ class ContentsManager(LoggingConfigurable):
         help="The base name used when creating untitled directories."
     )
 
-    pre_save_hook = Any(None, config=True,
+    pre_save_hook = Any(None, config=True, allow_none=True,
         help="""Python callable or importstring thereof
 
         To be called on a contents model prior to save.

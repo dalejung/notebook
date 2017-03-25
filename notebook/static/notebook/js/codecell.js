@@ -10,6 +10,7 @@
 
 
 define([
+    'jquery',
     'base/js/namespace',
     'base/js/utils',
     'base/js/keyboard',
@@ -21,7 +22,9 @@ define([
     'codemirror/lib/codemirror',
     'codemirror/mode/python/python',
     'notebook/js/codemirror-ipython'
-], function(IPython,
+], function(
+    $,
+    IPython,
     utils,
     keyboard,
     configmod,
@@ -331,6 +334,12 @@ define([
         CodeCell.msg_cells[this.last_msg_id] = this;
         this.render();
         this.events.trigger('execute.CodeCell', {cell: this});
+        var that = this;
+        this.events.on('finished_iopub.Kernel', function (evt, data) {
+            if (that.kernel.id === data.kernel.id && that.last_msg_id === data.msg_id) {
+		that.events.trigger('finished_execute.CodeCell', {cell: that});
+	    }
+        });
     };
     
     /**
@@ -456,7 +465,7 @@ define([
         } else {
             ns = encodeURIComponent(prompt_value);
         }
-        return 'In&nbsp;[' + ns + ']:';
+        return '<bdi>In</bdi>&nbsp;[' + ns + ']:';
     };
 
     CodeCell.input_prompt_continuation = function (prompt_value, lines_number) {
@@ -501,6 +510,7 @@ define([
     CodeCell.prototype.clear_output = function (wait) {
         this.output_area.clear_output(wait);
         this.set_input_prompt();
+        this.events.trigger('clear_output.CodeCell', {cell: this});
     };
 
 
@@ -535,7 +545,11 @@ define([
         var outputs = this.output_area.toJSON();
         data.outputs = outputs;
         data.metadata.trusted = this.output_area.trusted;
-        data.metadata.collapsed = this.output_area.collapsed;
+        if (this.output_area.collapsed) {
+            data.metadata.collapsed = this.output_area.collapsed;
+        } else {
+            delete data.metadata.collapsed;
+        }
         if (this.output_area.scroll_state === 'auto') {
             delete data.metadata.scrolled;
         } else {

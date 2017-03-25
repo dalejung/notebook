@@ -1,6 +1,5 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-__webpack_public_path__ = window['staticURL'] + 'notebook/js/built/';
 
 // adapted from Mozilla Developer Network example at
 // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Function/bind
@@ -21,10 +20,10 @@ var bind = function bind(obj) {
 Function.prototype.bind = Function.prototype.bind || bind ;
 
 
-requirejs(['contents'], function(contentsModule) {
 require([
-    'base/js/namespace',
     'jquery',
+    'contents',
+    'base/js/namespace',
     'notebook/js/notebook',
     'services/config',
     'base/js/utils',
@@ -43,20 +42,22 @@ require([
     'codemirror/lib/codemirror',
     'notebook/js/about',
     'notebook/js/searchandreplace',
-    'notebook/js/clipboard'
+    'notebook/js/clipboard',
+    'notebook/js/export',
 ], function(
-    IPython,
     $,
-    notebook,
+    contents_service,
+    IPython,
+    notebookmod,
     configmod,
     utils,
-    page,
+    pagemod,
     events,
     loginwidget,
     maintoolbar,
-    pager,
+    pagermod,
     quickhelp,
-    menubar,
+    menubarmod,
     notificationarea,
     savewidget,
     actions,
@@ -71,13 +72,8 @@ require([
 
     // Pull typeahead from the global jquery object
     var typeahead = $.typeahead;
-    
-    try{
-        requirejs(['custom/custom'], function() {});
-    } catch(err) {
-        console.log("Error processing custom.js. Logging and continuing")
-        console.warn(err);
-    }
+
+    function setup_notebook() {
 
     // compat with old IPython, remove for IPython > 3.0
     window.CodeMirror = CodeMirror;
@@ -99,8 +95,8 @@ require([
 
     // Instantiate the main objects
     
-    var page = new page.Page();
-    var pager = new pager.Pager('div#pager', {
+    var page = new pagemod.Page();
+    var pager = new pagermod.Pager('div#pager', {
         events: events});
     var acts = new actions.init();
     var keyboard_manager = new keyboardmanager.KeyboardManager({
@@ -113,11 +109,11 @@ require([
         events: events,
         keyboard_manager: keyboard_manager});
     acts.extend_env({save_widget:save_widget});
-    var contents = new contentsModule.Contents({
+    var contents = new contents_service.Contents({
           base_url: common_options.base_url,
           common_config: common_config
         });
-    var notebook = new notebook.Notebook('div#notebook', $.extend({
+    var notebook = new notebookmod.Notebook('div#notebook', $.extend({
         events: events,
         keyboard_manager: keyboard_manager,
         save_widget: save_widget,
@@ -135,7 +131,7 @@ require([
         notebook: notebook});
     keyboard_manager.set_notebook(notebook);
     keyboard_manager.set_quickhelp(quick_help);
-    var menubar = new menubar.MenuBar('#menubar', $.extend({
+    var menubar = new menubarmod.MenuBar('#menubar', $.extend({
         notebook: notebook,
         contents: contents,
         events: events,
@@ -223,13 +219,22 @@ require([
                 console.warn('Widgets are not available.  Please install widgetsnbextension or ipywidgets 4.0');
             });
         }
+        notebook.load_notebook(common_options.notebook_path);
     })
     .catch(function(error) {
         console.error('Could not load ipywidgets', error);
     });
     // END HARDCODED WIDGETS HACK
+    } // setup_notebook()
+    
+    try{
+        requirejs(['custom/custom'], function() {
+          setup_notebook();
+        });
+    } catch(err) {
+        setup_notebook();
+        console.log("Error processing custom.js. Logging and continuing")
+        console.warn(err);
+    }
 
-    notebook.load_notebook(common_options.notebook_path);
-
-});
 });

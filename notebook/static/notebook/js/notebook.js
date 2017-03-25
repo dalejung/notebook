@@ -5,31 +5,63 @@
  * @module notebook
  */
 "use strict";
-import IPython from 'base/js/namespace';
-import _ from 'underscore';
-import utils from 'base/js/utils';
-import dialog from 'base/js/dialog';
-import cellmod from 'notebook/js/cell';
-import textcell from 'notebook/js/textcell';
-import codecell from 'notebook/js/codecell';
-import moment from 'moment';
-import configmod from 'services/config';
-import session from 'services/sessions/session';
-import celltoolbar from 'notebook/js/celltoolbar';
-import marked from 'components/marked/lib/marked';
-import CodeMirror from 'codemirror/lib/codemirror';
-import runMode from 'codemirror/addon/runmode/runmode';
-import mathjaxutils from 'notebook/js/mathjaxutils';
-import keyboard from 'base/js/keyboard';
-import tooltip from 'notebook/js/tooltip';
-import default_celltoolbar from 'notebook/js/celltoolbarpresets/default';
-import rawcell_celltoolbar from 'notebook/js/celltoolbarpresets/rawcell';
-import slideshow_celltoolbar from 'notebook/js/celltoolbarpresets/slideshow';
-import attachments_celltoolbar from 'notebook/js/celltoolbarpresets/attachments';
-import scrollmanager from 'notebook/js/scrollmanager';
-import commandpalette from 'notebook/js/commandpalette';
-import {ShortcutEditor} from 'notebook/js/shortcuteditor';
+define([
+    'jquery',
+    'base/js/namespace',
+    'underscore',
+    'base/js/utils',
+    'base/js/dialog',
+    './cell',
+    './textcell',
+    './codecell',
+    'moment',
+    'services/config',
+    'services/sessions/session',
+    './celltoolbar',
+    'components/marked/lib/marked',
+    'codemirror/lib/codemirror',
+    'codemirror/addon/runmode/runmode',
+    './mathjaxutils',
+    'base/js/keyboard',
+    './tooltip',
+    './celltoolbarpresets/default',
+    './celltoolbarpresets/rawcell',
+    './celltoolbarpresets/slideshow',
+    './celltoolbarpresets/attachments',
+    './celltoolbarpresets/tags',
+    './scrollmanager',
+    './commandpalette',
+    './shortcuteditor',
+], function (
+    $,
+    IPython,
+    _,
+    utils,
+    dialog,
+    cellmod,
+    textcell,
+    codecell,
+    moment,
+    configmod,
+    session,
+    celltoolbar,
+    marked,
+    CodeMirror,
+    runMode,
+    mathjaxutils,
+    keyboard,
+    tooltip,
+    default_celltoolbar,
+    rawcell_celltoolbar,
+    slideshow_celltoolbar,
+    attachments_celltoolbar,
+    tags_celltoolbar,
+    scrollmanager,
+    commandpalette,
+    shortcuteditor
+) {
 
+    var ShortcutEditor = shortcuteditor.ShortcutEditor;
     var _SOFT_SELECTION_CLASS = 'jupyter-soft-selected';
 
     function soft_selected(cell){
@@ -50,7 +82,7 @@ import {ShortcutEditor} from 'notebook/js/shortcuteditor';
      * @param {string}          options.notebook_path
      * @param {string}          options.notebook_name
      */
-    export function Notebook(selector, options) {
+    function Notebook(selector, options) {
         this.config = options.config;
         this.class_config = new configmod.ConfigWithDefaults(this.config, 
                                         Notebook.options_default, 'Notebook');
@@ -153,6 +185,7 @@ import {ShortcutEditor} from 'notebook/js/shortcuteditor';
         this.kernel_selector = null;
         this.dirty = null;
         this.trusted = null;
+        this._changed_on_disk_dialog = null;
         this._fully_loaded = false;
 
         // Trigger cell toolbar registration.
@@ -160,6 +193,7 @@ import {ShortcutEditor} from 'notebook/js/shortcuteditor';
         rawcell_celltoolbar.register(this);
         slideshow_celltoolbar.register(this);
         attachments_celltoolbar.register(this);
+        tags_celltoolbar.register(this);
 
         var that = this;
 
@@ -526,7 +560,8 @@ import {ShortcutEditor} from 'notebook/js/shortcuteditor';
      * @return {jQuery} A selector of all cell elements
      */
     Notebook.prototype.get_cell_elements = function () {
-        return this.container.find(".cell").not('.cell .cell');
+        var container = this.container || $('#notebook-container')
+        return container.find(".cell").not('.cell .cell');
     };
 
     /**
@@ -1639,6 +1674,18 @@ import {ShortcutEditor} from 'notebook/js/shortcuteditor';
             first_inserted.focus_cell();
         }
     };
+    
+    /**
+     * Re-render the output of a CodeCell.
+     */
+    Notebook.prototype.render_cell_output = function (code_cell) {
+        var cell_data = code_cell.toJSON();
+        var cell_index = this.find_cell_index(code_cell);
+        var trusted = code_cell.output_area.trusted;
+        this.clear_output(cell_index);
+        code_cell.output_area.trusted = trusted;
+        code_cell.fromJSON(cell_data);
+    };
 
     // Split/merge
 
@@ -2219,6 +2266,28 @@ import {ShortcutEditor} from 'notebook/js/shortcuteditor';
      * Prompt the user to restart the kernel.
      * if options.confirm === false, no confirmation dialog is shown.
      */
+    Notebook.prototype.shutdown_kernel = function (options) {
+        var that = this;
+        var shutdown_options = {};
+        shutdown_options.confirm = (options || {}).confirm;
+        shutdown_options.dialog = {
+            title : "Shutdown kernel?",
+            body : $("<p/>").text(
+                'Do you want to shutdown the current kernel?  All variables will be lost.'
+            ),
+            buttons : {
+                "Shutdown" : {
+                    "class" : "btn-danger",
+                    "click" : function () {},
+                },
+            }
+        };
+        shutdown_options.kernel_action = function() {
+            that.session.delete();
+        };
+        return this._restart_kernel(shutdown_options);
+    };
+
     Notebook.prototype.restart_kernel = function (options) {
         var that = this;
         var restart_options = {};
@@ -2254,11 +2323,14 @@ import {ShortcutEditor} from 'notebook/js/shortcuteditor';
                 that.events.one('kernel_ready.Kernel', resolve_promise);
             }, reject_promise);
         }
-        
-        if (options.confirm === false) {
+
+        var do_kernel_action = options.kernel_action || restart_and_resolve;
+       
+        // no need to confirm if the kernel is not connected
+        if (options.confirm === false || !that.kernel.is_connected()) {
             var default_button = options.dialog.buttons[Object.keys(options.dialog.buttons)[0]];
             promise.then(default_button.click);
-            restart_and_resolve();
+            do_kernel_action();
             return promise;
         }
         options.dialog.notebook = this;
@@ -2273,7 +2345,7 @@ import {ShortcutEditor} from 'notebook/js/shortcuteditor';
             var click = button.click;
             button.click = function () {
                 promise.then(click);
-                restart_and_resolve();
+                do_kernel_action();
             };
         });
         options.dialog.buttons = buttons;
@@ -2623,7 +2695,14 @@ import {ShortcutEditor} from 'notebook/js/shortcuteditor';
                     if (last_modified > that.last_modified) {
                         console.warn("Last saving was done on `"+that.last_modified+"`("+that._last_modified+"), "+
                                     "while the current file seem to have been saved on `"+data.last_modified+"`");
-                        dialog.modal({
+                        if (that._changed_on_disk_dialog !== null) {
+                            // update save callback on the confirmation button
+                            that._changed_on_disk_dialog.find('.save-confirm-btn').click(_save);
+                            // redisplay existing dialog
+                            that._changed_on_disk_dialog.modal('show');
+                        } else {
+                          // create new dialog
+                          that._changed_on_disk_dialog = dialog.modal({
                             notebook: that,
                             keyboard_manager: that.keyboard_manager,
                             title: "Notebook changed",
@@ -2639,13 +2718,14 @@ import {ShortcutEditor} from 'notebook/js/shortcuteditor';
                                 },
                                 Cancel: {},
                                 Overwrite: {
-                                    class: 'btn-danger',
+                                    class: 'btn-danger save-confirm-btn',
                                     click: function () {
                                         _save();
                                     }
                                 },
                             }
-                        });
+                          });
+                        }
                     } else {
                         return _save();
                     }
@@ -3218,3 +3298,6 @@ import {ShortcutEditor} from 'notebook/js/shortcuteditor';
         this.events.trigger('checkpoint_deleted.Notebook');
         this.load_notebook(this.notebook_path);
     };
+
+    return {Notebook: Notebook};
+})

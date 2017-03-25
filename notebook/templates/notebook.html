@@ -109,6 +109,7 @@ data-notebook-path="{{notebook_path | urlencode}}"
                                 <li id="download_html"><a href="#">HTML (.html)</a></li>
                                 <li id="download_markdown"><a href="#">Markdown (.md)</a></li>
                                 <li id="download_rst"><a href="#">reST (.rst)</a></li>
+                                <li id="download_latex"><a href="#">LaTeX (.tex)</a></li>
                                 <li id="download_pdf"><a href="#">PDF via LaTeX (.pdf)</a></li>
                             </ul>
                         </li>
@@ -270,6 +271,10 @@ data-notebook-path="{{notebook_path | urlencode}}"
                             title="Reconnect to the Kernel">
                             <a href="#">Reconnect</a>
                         </li>
+                        <li id="shutdown_kernel"
+                            title="Shutdown the Kernel">
+                            <a href="#">Shutdown</a>
+                        </li>
                         <li class="divider"></li>
                         <li id="menu-change-kernel" class="dropdown-submenu">
                             <a href="#">Change kernel</a>
@@ -281,7 +286,8 @@ data-notebook-path="{{notebook_path | urlencode}}"
                     <ul  id="help_menu" class="dropdown-menu">
                         {% block help %}
                         <li id="notebook_tour" title="A quick tour of the notebook user interface"><a href="#">User Interface Tour</a></li>
-                        <li id="keyboard_shortcuts" title="Opens a tooltip with all keyboard shortcuts"><a href="#">Keyboard Shortcuts</a></li>
+                        <li id="keyboard_shortcuts" title="Opens a dialog which shows all keyboard shortcuts"><a href="#">Keyboard Shortcuts</a></li>
+                        <li id="edit_keyboard_shortcuts" title="Opens a dialog allowing you to edit Keyboard shortcuts"><a href="#">Edit Keyboard Shortcuts</a></li>
                         <li class="divider"></li>
                         {% set
                             sections = (
@@ -358,6 +364,6 @@ data-notebook-path="{{notebook_path | urlencode}}"
 
 <script src="{{ static_url("components/text-encoding/lib/encoding.js") }}" charset="utf-8"></script>
 
-<script src="{{ static_url("notebook/js/built/main.min.js") }}" type="text/javascript" charset="utf-8"></script>
+<script src="{{ static_url("notebook/js/main.min.js") }}" type="text/javascript" charset="utf-8"></script>
 
 {% endblock %}
