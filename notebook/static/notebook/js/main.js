@@ -48,16 +48,16 @@ require([
     $,
     contents_service,
     IPython,
-    notebook,
+    notebookmod,
     configmod,
     utils,
-    page,
+    pagemod,
     events,
     loginwidget,
     maintoolbar,
-    pager,
+    pagermod,
     quickhelp,
-    menubar,
+    menubarmod,
     notificationarea,
     savewidget,
     actions,
@@ -72,13 +72,8 @@ require([
 
     // Pull typeahead from the global jquery object
     var typeahead = $.typeahead;
-    
-    try{
-        requirejs(['custom/custom'], function() {});
-    } catch(err) {
-        console.log("Error processing custom.js. Logging and continuing");
-        console.warn(err);
-    }
+
+    function setup_notebook() {
 
     // compat with old IPython, remove for IPython > 3.0
     window.CodeMirror = CodeMirror;
@@ -100,8 +95,8 @@ require([
 
     // Instantiate the main objects
     
-    var page = new page.Page();
-    var pager = new pager.Pager('div#pager', {
+    var page = new pagemod.Page();
+    var pager = new pagermod.Pager('div#pager', {
         events: events});
     var acts = new actions.init();
     var keyboard_manager = new keyboardmanager.KeyboardManager({
@@ -118,7 +113,7 @@ require([
           base_url: common_options.base_url,
           common_config: common_config
         });
-    var notebook = new notebook.Notebook('div#notebook', $.extend({
+    var notebook = new notebookmod.Notebook('div#notebook', $.extend({
         events: events,
         keyboard_manager: keyboard_manager,
         save_widget: save_widget,
@@ -136,7 +131,7 @@ require([
         notebook: notebook});
     keyboard_manager.set_notebook(notebook);
     keyboard_manager.set_quickhelp(quick_help);
-    var menubar = new menubar.MenuBar('#menubar', $.extend({
+    var menubar = new menubarmod.MenuBar('#menubar', $.extend({
         notebook: notebook,
         contents: contents,
         events: events,
@@ -231,5 +226,16 @@ require([
     // END HARDCODED WIDGETS HACK
 
     notebook.load_notebook(common_options.notebook_path);
+    } // setup_notebook()
+    
+    try{
+        requirejs(['custom/custom'], function() {
+          setup_notebook();
+        });
+    } catch(err) {
+        setup_notebook();
+        console.log("Error processing custom.js. Logging and continuing")
+        console.warn(err);
+    }
 
 });
