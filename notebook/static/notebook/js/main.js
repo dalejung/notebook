@@ -94,8 +94,8 @@ require([
 
     // Instantiate the main objects
     
-    var page = new page.Page('div#header', 'div#site');
-    var pager = new pager.Pager('div#pager', {
+    var page = new pagemod.Page('div#header', 'div#site');
+    var pager = new pagermod.Pager('div#pager', {
         events: events});
     var acts = new actions.init();
     var keyboard_manager = new keyboardmanager.KeyboardManager({
