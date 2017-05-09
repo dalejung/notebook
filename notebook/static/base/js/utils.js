@@ -46,7 +46,7 @@ define([
                     resolve(module);
                 }
             }, function(err) {
-                reject(err);
+                resolve(err);
             });
         });
     };
@@ -58,8 +58,13 @@ define([
      */
     var load_extensions = function () {
         console.log('load_extensions', arguments);
-        return Promise.all(Array.prototype.map.call(arguments, load_extension)).catch(function(err) {
-            console.error("Failed to load extension" + (err.requireModules.length>1?'s':'') + ":", err.requireModules, err);
+        return Promise.all(Array.prototype.map.call(arguments, load_extension)).then(function(values) {
+          for (var i=0; i < values.length; i++) {
+            var err = values[i];
+            if (values[i] instanceof Error) {
+              console.error("Failed to load extension" + (err.requireModules.length>1?'s':'') + ":", err.requireModules, err);
+            }
+          }
         });
     };
 
@@ -772,7 +777,13 @@ define([
     };
     
     var ajax = function (url, settings) {
-        // like $.ajax, but ensure Authorization header is set
+        // like $.ajax, but ensure XSRF or Authorization header is set
+        if (typeof url === "object") {
+            // called with single argument: $.ajax({url: '...'})
+            settings = url;
+            url = settings.url;
+            delete settings.url;
+        }
         settings = _add_auth_header(settings);
         return $.ajax(url, settings);
     };
@@ -1045,6 +1056,17 @@ define([
         fn();
       }
     }
+    
+    var change_favicon = function (src) {
+        var link = document.createElement('link'),
+            oldLink = document.getElementById('favicon');
+        link.id = 'favicon';
+        link.type = 'image/x-icon';
+        link.rel = 'shortcut icon';
+        link.href = utils.url_path_join(utils.get_body_data('baseUrl'), src);
+        if (oldLink) document.head.removeChild(oldLink);
+        document.head.appendChild(link);
+    };
 
     var utils = {
         throttle: throttle,
@@ -1095,7 +1117,8 @@ define([
         format_datetime: format_datetime,
         datetime_sort_helper: datetime_sort_helper,
         dnd_contain_file: dnd_contain_file,
-        _ansispan:_ansispan
+        _ansispan:_ansispan,
+        change_favicon: change_favicon
     };
 
     return utils;

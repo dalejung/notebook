@@ -313,7 +313,7 @@ define([
             stop_on_error = true;
         }
 
-        this.output_area.clear_output(false, true);
+        this.clear_output(false, true);
         var old_msg_id = this.last_msg_id;
         if (old_msg_id) {
             this.kernel.clear_callbacks_for_msg(old_msg_id);
@@ -335,11 +335,13 @@ define([
         this.render();
         this.events.trigger('execute.CodeCell', {cell: this});
         var that = this;
-        this.events.on('finished_iopub.Kernel', function (evt, data) {
+        function handleFinished(evt, data) {
             if (that.kernel.id === data.kernel.id && that.last_msg_id === data.msg_id) {
-		that.events.trigger('finished_execute.CodeCell', {cell: that});
-	    }
-        });
+            		that.events.trigger('finished_execute.CodeCell', {cell: that});
+                that.events.off('finished_iopub.Kernel', handleFinished);
+      	    }
+        }
+        this.events.on('finished_iopub.Kernel', handleFinished);
     };
     
     /**
@@ -507,10 +509,10 @@ define([
     };
 
 
-    CodeCell.prototype.clear_output = function (wait) {
-        this.output_area.clear_output(wait);
-        this.set_input_prompt();
+    CodeCell.prototype.clear_output = function (wait, ignore_queue) {
         this.events.trigger('clear_output.CodeCell', {cell: this});
+        this.output_area.clear_output(wait, ignore_queue);
+        this.set_input_prompt();
     };
 
 

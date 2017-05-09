@@ -346,6 +346,35 @@ class NotebookPasswordApp(JupyterApp):
         self.log.info("Wrote hashed password to %s" % self.config_file)
 
 
+class NbserverStopApp(JupyterApp):
+    version = __version__
+    description="Stop currently running notebook server for a given port"
+
+    port = Integer(8888, config=True,
+        help="Port of the server to be killed. Default 8888")
+
+    def parse_command_line(self, argv=None):
+        super(NbserverStopApp, self).parse_command_line(argv)
+        if self.extra_args:
+            self.port=int(self.extra_args[0])
+
+    def start(self):
+        servers = list(list_running_servers(self.runtime_dir))
+        if not servers:
+            self.exit("There are no running servers")
+        for server in servers:
+            if server['port'] == self.port:
+                self.log.debug("Shutting down notebook server with PID: %i", server['pid'])
+                os.kill(server['pid'], signal.SIGTERM)
+                return
+        else:
+            print("There is currently no server running on port {}".format(self.port), file=sys.stderr)
+            print("Ports currently in use:", file=sys.stderr)
+            for server in servers:
+                print("  - {}".format(server['port']), file=sys.stderr)
+            self.exit(1)
+
+
 class NbserverListApp(JupyterApp):
     version = __version__
     description="List currently running notebook servers."
@@ -449,6 +478,7 @@ class NotebookApp(JupyterApp):
     
     subcommands = dict(
         list=(NbserverListApp, NbserverListApp.description.splitlines()[0]),
+        stop=(NbserverStopApp, NbserverStopApp.description.splitlines()[0]),
         password=(NotebookPasswordApp, NotebookPasswordApp.description.splitlines()[0]),
     )
 
@@ -686,7 +716,18 @@ class NotebookApp(JupyterApp):
                       standard library module, which allows setting of the
                       BROWSER environment variable to override it.
                       """)
-    
+
+    webbrowser_open_new = Integer(2, config=True,
+        help="""Specify Where to open the notebook on startup. This is the
+        `new` argument passed to the standard library method `webbrowser.open`.
+        The behaviour is not guaranteed, but depends on browser support. Valid
+        values are:
+            2 opens a new tab,
+            1 opens a new window,
+            0 opens in an existing window.
+        See the `webbrowser.open` documentation for details.
+        """)
+
     webapp_settings = Dict(config=True,
         help="DEPRECATED, use tornado_settings"
     )
@@ -748,7 +789,7 @@ class NotebookApp(JupyterApp):
         value = proposal['value']
         if not value.startswith('/'):
             value = '/' + value
-        elif not value.endswith('/'):
+        if not value.endswith('/'):
             value = value + '/'
         return value
     
@@ -997,7 +1038,7 @@ class NotebookApp(JupyterApp):
         limited.""")
 
     iopub_data_rate_limit = Float(1000000, config=True, help="""(bytes/sec)
-        Maximum rate at which messages can be sent on iopub before they are
+        Maximum rate at which stream output can be sent on iopub before they are
         limited.""")
 
     rate_limit_window = Float(3, config=True, help="""(sec) Time window used to 
@@ -1046,7 +1087,6 @@ class NotebookApp(JupyterApp):
         self.config_manager = self.config_manager_class(
             parent=self,
             log=self.log,
-            config_dir=os.path.join(self.config_dir, 'nbconfig'),
         )
 
     def init_logging(self):
@@ -1166,7 +1206,7 @@ class NotebookApp(JupyterApp):
             log("Terminals not available (error was %s)", e)
 
     def init_signal(self):
-        if not sys.platform.startswith('win') and sys.stdin.isatty():
+        if not sys.platform.startswith('win') and sys.stdin and sys.stdin.isatty():
             signal.signal(signal.SIGINT, self._handle_sigint)
         signal.signal(signal.SIGTERM, self._signal_stop)
         if hasattr(signal, 'SIGUSR1'):
@@ -1350,6 +1390,8 @@ class NotebookApp(JupyterApp):
         This method takes no arguments so all configuration and initialization
         must be done prior to calling this method."""
 
+        super(NotebookApp, self).start()
+
         if not self.allow_root:
             # check if we are running as root, and abort if it's not allowed
             try:
@@ -1359,8 +1401,6 @@ class NotebookApp(JupyterApp):
             if uid == 0:
                 self.log.critical("Running as root is not recommended. Use --allow-root to bypass.")
                 self.exit(1)
-
-        super(NotebookApp, self).start()
 
         info = self.log.info
         for line in self.notebook_info().split("\n"):
@@ -1395,7 +1435,7 @@ class NotebookApp(JupyterApp):
                 uri = url_concat(uri, {'token': self.one_time_token})
             if browser:
                 b = lambda : browser.open(url_path_join(self.connection_url, uri),
-                                          new=2)
+                                          new=self.webbrowser_open_new)
                 threading.Thread(target=b).start()
 
         if self.token and self._token_generated:
