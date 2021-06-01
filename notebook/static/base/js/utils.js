@@ -64,6 +64,7 @@ define([
                 var err = result.reason;
                 console.error("Failed to load extension" + (err.requireModules.length>1?'s':'') + ":", err.requireModules, err);
               }
+            });
         });
     };
 
