@@ -59,18 +59,18 @@ requirejs([
     $,
     contents_service,
     IPython,
-    notebook,
+    notebookmod,
     configmod,
     utils,
-    page,
+    pagemod,
     events,
     promises,
     loginwidget,
     maintoolbar,
-    pager,
+    pagermod,
     nb_promises,
     quickhelp,
-    menubar,
+    menubarmod,
     notificationarea,
     savewidget,
     actions,
@@ -115,8 +115,8 @@ requirejs([
 
     // Instantiate the main objects
     
-    var page = new page.Page('div#header', 'div#site');
-    var pager = new pager.Pager('div#pager', {
+    var page = new pagemod.Page('div#header', 'div#site');
+    var pager = new pagermod.Pager('div#pager', {
         events: events});
     var acts = new actions.init();
     var keyboard_manager = new keyboardmanager.KeyboardManager({
@@ -133,7 +133,7 @@ requirejs([
           base_url: common_options.base_url,
           common_config: common_config
         });
-    var notebook = new notebook.Notebook('div#notebook', $.extend({
+    var notebook = new notebookmod.Notebook('div#notebook', $.extend({
         events: events,
         keyboard_manager: keyboard_manager,
         save_widget: save_widget,
@@ -151,7 +151,7 @@ requirejs([
         notebook: notebook});
     keyboard_manager.set_notebook(notebook);
     keyboard_manager.set_quickhelp(quick_help);
-    var menubar = new menubar.MenuBar('#menubar', $.extend({
+    var menubar = new menubarmod.MenuBar('#menubar', $.extend({
         notebook: notebook,
         contents: contents,
         events: events,
