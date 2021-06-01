@@ -219,15 +219,17 @@ requirejs([
       clipboard.setup_clipboard_events();
 
       // Now actually load nbextensionsload_extensions_from_config
-      Promise.all([
+      Promise.allSettled([
         utils.load_extensions_from_config(config_section),
         utils.load_extensions_from_config(common_config),
       ])
-        .catch(function(error) {
-          console.error('Could not load nbextensions from user config files', error);
-        })
       // BEGIN HARDCODED WIDGETS HACK
-        .then(function() {
+        .then(function(results) {
+          results.forEach(function(result) {
+            if (result.status === 'rejected') {
+              console.error('Could not load nbextensions from user config files', result.reason);
+            }
+          });
           if (!utils.is_loaded('jupyter-js-widgets/extension')) {
             // Fallback to the ipywidgets extension
             utils.load_extension('widgets/notebook/js/extension').catch(function () {
