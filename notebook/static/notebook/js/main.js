@@ -53,7 +53,8 @@ requirejs([
     'notebook/js/searchandreplace',
     'notebook/js/clipboard',
     'bidi/bidi',
-    'notebook/js/celltoolbarpresets/tags'
+    'notebook/js/celltoolbarpresets/tags',
+    'notebook/js/export',
 ], function(
     $,
     contents_service,
